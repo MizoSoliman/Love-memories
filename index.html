@@ -677,6 +677,7 @@
       adminBadge.style.display = isAdmin ? 'flex' : 'none';
       addMemoryBtn.style.display = isAdmin ? 'inline-flex' : 'none';
       musicBtn.style.display = isAdmin ? 'none' : 'flex';
+      $('love-note').style.display = isAdmin ? 'none' : 'block';
       if(isAdmin && musicPlaying){
         musicPlaying = false;
         musicBtn.classList.remove('playing');
