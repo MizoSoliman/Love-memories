@@ -697,6 +697,11 @@
   $('logoutBtn').addEventListener('click', function(){
     unlocked = false; isAdmin = false;
     unsubscribeFromRealtimeChanges();
+    if(musicPlaying){
+      musicPlaying = false;
+      musicBtn.classList.remove('playing');
+      bgMusic.pause();
+    }
     app.classList.remove('visible');
     loginScreen.classList.remove('hidden');
     passwordInput.value = '';
