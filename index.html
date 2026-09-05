@@ -234,6 +234,25 @@
     font-size:13.5px; color:var(--petal);
   }
 
+  .love-note-card{
+    max-width:620px; margin:0 auto;
+    padding:36px 40px;
+    text-align:center;
+    background:rgba(248,215,225,0.05);
+    border:1px solid rgba(248,215,225,0.14);
+    border-radius:24px;
+    backdrop-filter:blur(10px);
+    box-shadow:0 18px 45px rgba(0,0,0,0.3);
+  }
+  .love-note-card p{
+    font-family:var(--serif); font-style:italic; font-weight:500;
+    font-size:clamp(18px, 2.6vw, 22px); line-height:1.9;
+    color:var(--cream);
+  }
+  @media (max-width:600px){
+    .love-note-card{ padding:28px 22px; }
+  }
+
   /* section heading */
   .section-head{ text-align:center; margin-bottom:56px; }
   .section-head h2{
@@ -468,6 +487,24 @@
   </section>
 
   <!-- JOURNEY -->
+  <!-- LOVE NOTE -->
+  <section id="love-note" style="padding:0 0 70px;">
+    <div class="container">
+      <div class="love-note-card fade-in" dir="rtl">
+        <p>
+          منذ أن أحببتك، وأنا أرى العالم بعينٍ أخرى؛<br>
+          فالسماء أصبحت أوسع، والليل أكثر دفئًا، وحتى الصمت صار يحمل صوتك.<br>
+          أنت لست مجرد حبٍ مرّ في قلبي، أنت الحكاية التي تمنيت ألا تنتهي،<br>
+          والأمان الذي وجدته بعد طول بحث، والشخص الذي كلما اقترب مني…<br>
+          شعرت أنني اقتربت من نفسي أكثر.<br>
+          وإن كان للحب وطن، فأنت وطني، وإن كان للعمر أمنية، فأمنيتي أن أقضيه معك،<br>
+          وإن كان لي أن أختار شيئًا واحدًا من هذا العالم كله،<br>
+          فسأختارك أنت… في كل مرة، وفي كل حياة. ❤️
+        </p>
+      </div>
+    </div>
+  </section>
+
   <section id="journey">
     <div class="container">
       <div class="section-head fade-in">
