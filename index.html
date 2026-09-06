@@ -470,6 +470,7 @@
       </ul>
       <div class="nav-right">
         <span class="admin-badge" id="adminBadge" style="display:none;"><span class="dot"></span> Admin Mode</span>
+        <button class="icon-btn" id="changePwBtn" style="display:none;" aria-label="Change viewing password"><i data-lucide="key-round"></i></button>
         <button class="icon-btn mobile-nav-toggle" id="navToggle" aria-label="Menu"><i data-lucide="menu"></i></button>
         <button class="icon-btn" id="logoutBtn" aria-label="Lock"><i data-lucide="lock"></i></button>
       </div>
@@ -608,6 +609,32 @@
   </div>
 </div>
 
+<!-- ===================== CHANGE PASSWORD ===================== -->
+<div class="overlay" id="pwOverlay">
+  <div class="overlay-card" style="max-width:380px; position:relative;">
+    <button class="close-x" id="closePwForm"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+    <h3 class="form-title">Change a Password ❤️</h3>
+    <form id="pwForm">
+      <div class="field">
+        <label>Which password?</label>
+        <div class="type-toggle">
+          <button type="button" class="active" data-pwtarget="love" id="pwTargetLoveBtn">Viewing (love)</button>
+          <button type="button" data-pwtarget="admin" id="pwTargetAdminBtn">Admin</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>New password</label>
+        <input type="text" id="newPwInput" placeholder="Enter new password..." required minlength="3">
+      </div>
+      <p id="pwError" style="color:var(--petal); font-size:13px; margin-bottom:10px; display:none;"></p>
+      <div class="form-actions">
+        <button type="button" class="btn-ghost" id="cancelPwForm">Cancel</button>
+        <button type="submit" class="btn-pill" id="savePwBtn">Save & Email ❤️</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 (function(){
   function safeIcons(){
@@ -665,12 +692,36 @@
   const app = $('app');
   const adminBadge = $('adminBadge');
   const addMemoryBtn = $('addMemoryBtn');
+  const changePwBtn = $('changePwBtn');
 
-  loginForm.addEventListener('submit', function(e){
+  let currentLovePassword = 'love'; // fallback until fetched from Supabase
+  let currentAdminPassword = 'admin'; // fallback until fetched from Supabase
+
+  async function fetchSitePasswords(){
+    try{
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value')
+        .in('key', ['love_password', 'admin_password']);
+      if(!error && data){
+        data.forEach(row=>{
+          if(row.key === 'love_password') currentLovePassword = row.value;
+          if(row.key === 'admin_password') currentAdminPassword = row.value;
+        });
+      }
+    } catch(e){
+      console.warn('Could not fetch site passwords, using fallback:', e);
+    }
+  }
+  fetchSitePasswords();
+
+  loginForm.addEventListener('submit', async function(e){
     e.preventDefault();
     const val = passwordInput.value.trim().toLowerCase();
-    if(val === 'love' || val === 'admin'){
-      isAdmin = (val === 'admin');
+    const isLove = val === currentLovePassword.trim().toLowerCase();
+    const isAdminPw = val === currentAdminPassword.trim().toLowerCase();
+    if(isLove || isAdminPw){
+      isAdmin = isAdminPw;
       unlocked = true;
       loginScreen.classList.add('hidden');
       app.classList.add('visible');
@@ -678,6 +729,7 @@
       addMemoryBtn.style.display = isAdmin ? 'inline-flex' : 'none';
       musicBtn.style.display = isAdmin ? 'none' : 'flex';
       $('love-note').style.display = isAdmin ? 'none' : 'block';
+      changePwBtn.style.display = isAdmin ? 'inline-flex' : 'none';
       if(isAdmin && musicPlaying){
         musicPlaying = false;
         musicBtn.classList.remove('playing');
@@ -1080,12 +1132,70 @@
     await loadMemories();
   });
 
+  /* ---------------- change viewing password ---------------- */
+  const pwOverlay = $('pwOverlay');
+  const pwForm = $('pwForm');
+  const newPwInput = $('newPwInput');
+  const pwError = $('pwError');
+  let pwTarget = 'love';
+
+  $('pwTargetLoveBtn').addEventListener('click', ()=>{
+    pwTarget = 'love';
+    $('pwTargetLoveBtn').classList.add('active');
+    $('pwTargetAdminBtn').classList.remove('active');
+  });
+  $('pwTargetAdminBtn').addEventListener('click', ()=>{
+    pwTarget = 'admin';
+    $('pwTargetAdminBtn').classList.add('active');
+    $('pwTargetLoveBtn').classList.remove('active');
+  });
+
+  changePwBtn.addEventListener('click', ()=>{
+    newPwInput.value = '';
+    pwError.style.display = 'none';
+    pwTarget = 'love';
+    $('pwTargetLoveBtn').classList.add('active');
+    $('pwTargetAdminBtn').classList.remove('active');
+    pwOverlay.classList.add('show');
+  });
+  $('closePwForm').addEventListener('click', ()=> pwOverlay.classList.remove('show'));
+  $('cancelPwForm').addEventListener('click', ()=> pwOverlay.classList.remove('show'));
+  pwOverlay.addEventListener('click', (e)=>{ if(e.target === pwOverlay) pwOverlay.classList.remove('show'); });
+
+  pwForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const newPassword = newPwInput.value.trim();
+    const saveBtn = $('savePwBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    pwError.style.display = 'none';
+    try{
+      const { data, error } = await supabase.functions.invoke('change-love-password', {
+        body: { newPassword, adminSecret: currentAdminPassword, target: pwTarget }
+      });
+      if(error) throw error;
+      if(data && data.error) throw new Error(data.error);
+      if(pwTarget === 'love'){ currentLovePassword = newPassword; }
+      else { currentAdminPassword = newPassword; }
+      pwOverlay.classList.remove('show');
+      alert('Password updated! An email confirmation was sent ❤️');
+    } catch(err){
+      console.error(err);
+      pwError.textContent = 'Could not update the password. Please try again.';
+      pwError.style.display = 'block';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & Email ❤️';
+    }
+  });
+
   /* ---------------- keyboard ---------------- */
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Escape'){
       formOverlay.classList.remove('show');
       lightboxOverlay.classList.remove('show');
       confirmOverlay.classList.remove('show');
+      pwOverlay.classList.remove('show');
     }
   });
 
