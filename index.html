@@ -1170,8 +1170,10 @@
     saveBtn.textContent = 'Saving...';
     pwError.style.display = 'none';
     try{
-      const { data, error } = await supabase.functions.invoke('change-love-password', {
-        body: { newPassword, adminSecret: currentAdminPassword, target: pwTarget }
+      const { data, error } = await supabase.rpc('change_site_password', {
+        p_target: pwTarget,
+        p_new_password: newPassword,
+        p_current_admin_password: currentAdminPassword
       });
       if(error) throw error;
       if(data && data.error) throw new Error(data.error);
